@@ -37,17 +37,44 @@ function parseData(data) {
   return { dates, users, dishes };
 }
 
+function convertTableHtmlToList($) {
+  const list = [];
+
+  // get all rows of table
+  const listTr = $("#cbUserTable tr");
+
+  // parse data from those rows
+  listTr.each(function (_, tr) {
+    const listTd = $(this).find("td");
+    const record = {};
+
+    listTd.each(function (i) {
+      if (i === 0) record.index = $(this).text().trim();
+      if (i === 1) record.date = $(this).text().trim();
+      if (i === 2) record.username = $(this).text().trim();
+      if (i === 3) record.dish = $(this).text().trim();
+      if (i === 4) record.time = $(this).text().trim();
+    });
+
+    if (Object.keys(record).length === 5) list.push(record);
+  });
+
+  return list;
+}
+
 function parseTableList(data) {
   // stimulate html document
   const $ = cheerio.load(data);
 
   // get table content
   const table = $("#cbUserTable").html();
+  const list = convertTableHtmlToList($);
 
-  return table;
+  return { table, list };
 }
 
 module.exports = {
   parseData,
   parseTableList,
+  convertTableHtmlToList,
 };

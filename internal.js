@@ -1,6 +1,6 @@
 /** CONSTANTS */
-const SOCKET_ADDRESS = "http://localhost:8080";
-// const SOCKET_ADDRESS = "https://www.datcom.site";
+// const SOCKET_ADDRESS = "http://localhost:8080";
+const SOCKET_ADDRESS = "https://www.datcom.site";
 const I_AM_INTRANET = "iAmIntranet";
 const VALIDATE_COOKIE = "validateCookie";
 const GET_DATA = "getData";
@@ -11,6 +11,7 @@ const GET_LIST_ALL = "getListAll";
 /** LIBRARIES */
 const io = require("socket.io-client");
 require("dotenv").config();
+require("./crons");
 
 /** UTILITIES */
 const getCookie = require("./utils/cookie");
