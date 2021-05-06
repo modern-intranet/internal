@@ -1,6 +1,6 @@
 /** CONSTANTS */
-const SOCKET_ADDRESS = "http://localhost:8080";
-// const SOCKET_ADDRESS = "https://www.datcom.site";
+// const SOCKET_ADDRESS = "http://localhost:8080";
+const SOCKET_ADDRESS = "https://www.datcom.site";
 const I_AM_INTRANET = "iAmIntranet";
 const VALIDATE_COOKIE = "validateCookie";
 const GET_DATA = "getData";
