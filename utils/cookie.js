@@ -1,68 +1,104 @@
 const puppeteer = require("puppeteer");
+const envfile = require("envfile");
+const { promises: fs } = require("fs");
+const CONSTANT = require("../constant");
 
-async function getCookie() {
-  console.log("Getting cookie ~");
+/* Stimulate browser to generate cookie */
+async function getCookie(department) {
+  console.log(`Getting cookie of ${department}...`);
 
   try {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     page.setDefaultNavigationTimeout(0);
 
-    // not load image for better speed
+    /* Skip image request */
     await page.setRequestInterception(true);
     page.on("request", (request) => {
       if (request.resourceType() === "image") request.abort();
       else request.continue();
     });
 
-    // set first google cookies and goto intranet
+    /* Set first google cookie and go to intranet */
     await page.setCookie({
-      name: process.env.COOKIE_1_NAME,
-      value: process.env.COOKIE_1_VALUE,
-      domain: process.env.COOKIE_DOMAIN_GOOGLE,
+      name: CONSTANT.GOOGLE_COOKIE_SMSV,
+      value: process.env[`${department}_GOOGLE_COOKIE_SMSV_VALUE`],
+      domain: CONSTANT.GOOGLE_DOMAIN,
     });
-    await page.goto(process.env.INTRANET_URL);
+    await page.goto(CONSTANT.INTRANET);
 
-    // set second google cookies
+    /* Set second google cookie */
     await page.setCookie({
-      name: process.env.COOKIE_2_NAME,
-      value: process.env.COOKIE_2_VALUE,
-      domain: process.env.COOKIE_DOMAIN_GOOGLE,
+      name: CONSTANT.GOOGLE_COOKIE_GAPS,
+      value: process.env[`${department}_GOOGLE_COOKIE_GAPS_VALUE`],
+      domain: CONSTANT.GOOGLE_DOMAIN,
     });
 
-    // login google
-    await page.type("input", process.env.ACCOUNT);
+    /* Login google */
+    await page.type("input", process.env[`${department}_GOOGLE_EMAIL`]);
     await page.keyboard.press("Enter");
     await page.waitForNavigation();
-    await page.type("input", process.env.PASSWORD);
+    await page.type("input", process.env[`${department}_GOOGLE_PASSWORD`]);
     await page.keyboard.press("Enter");
     await page.waitForNavigation();
 
-    // goto intranet again
-    await page.goto(process.env.INTRANET_URL);
+    /* Go to intranet again */
+    await page.goto(CONSTANT.INTRANET);
 
-    // get new cookie
+    /* Get new cookie */
     const intranetCookie = (await page.cookies()).find(
-      (c) => c.domain === process.env.COOKIE_DOMAIN_INTRANET
+      ({ domain }) => domain === CONSTANT.INTRANET_DOMAIN
     );
-    process.env.COOKIE_INTRANET_NAME = intranetCookie && intranetCookie.name;
-    process.env.COOKIE_INTRANET_VALUE = intranetCookie && intranetCookie.value;
+    process.env[`${department}_INTRANET_COOKIE_NAME`] =
+      intranetCookie && intranetCookie.name;
+    process.env[`${department}_INTRANET_COOKIE_VALUE`] =
+      intranetCookie && intranetCookie.value;
 
-    // close browser
+    /* Close browser */
     await browser.close();
 
-    // log result
-    if (!!intranetCookie) {
-      console.log(`New cookie is ${process.env.COOKIE_INTRANET_VALUE} ✓`);
-      return true;
+    /* Log result */
+    if (intranetCookie) {
+      console.log(`New cookie of ${department} ✓`);
+      console.log(`- ${intranetCookie.value}`);
     } else {
       console.log("Get cookie failed ⚠");
-      return false;
     }
+    return !!intranetCookie;
   } catch (err) {
-    console.log(`Login failed ${err.message}`);
+    console.log(`Login failed ${err.message} ⚠`);
     return false;
   }
 }
 
-module.exports = getCookie;
+/* Get cookie of all departments */
+async function getAllCookies() {
+  for (let department of CONSTANT.DEPARTMENTS) {
+    if (process.env[`${department}_GOOGLE_EMAIL`]) {
+      await getCookie(department);
+    }
+  }
+
+  /* Update to env file */
+  try {
+    const file = await fs.readFile(__dirname + "./../.env", "utf8");
+    const envObj = envfile.parse(file);
+
+    /* Update with current env variables */
+    for (let name in envObj) {
+      envObj[name] = process.env[name];
+    }
+
+    /* Write back to file */
+    await fs.writeFile(__dirname + "./../.env", envfile.stringify(envObj));
+
+    console.log(`Update env succeed ✓`);
+  } catch (err) {
+    console.log(`Update env failed ${err.message} ⚠`);
+  }
+}
+
+module.exports = {
+  getCookie,
+  getAllCookies,
+};

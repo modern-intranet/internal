@@ -1,37 +1,46 @@
 const axios = require("axios");
 const https = require("https");
 const FormData = require("form-data");
-const { parseData, parseTableList } = require("./parses");
 
+const CONSTANT = require("../constant");
+const { crawlOrderPage, crawlListPage } = require("./crawl");
+
+/* Ignore security for testing */
 const request = axios.create({
   httpsAgent: new https.Agent({
     rejectUnauthorized: false,
   }),
 });
 
-async function validateCookie() {
+/* Check if cookie is still valid */
+async function validateCookie(department) {
   try {
-    const response = await request.get(process.env.INTRANET_FOOD_URL, {
+    const response = await request.get(CONSTANT.INTRANET_ORDER, {
       headers: {
-        Cookie: `${process.env.COOKIE_INTRANET_NAME}=${process.env.COOKIE_INTRANET_VALUE};`,
+        Cookie: `${process.env[`${department}_INTRANET_COOKIE_NAME`]}=${
+          process.env[`${department}_INTRANET_COOKIE_VALUE`]
+        };`,
       },
     });
     return response.status === 200;
-  } catch (err) {
+  } catch {
     return false;
   }
 }
 
-async function getData() {
+/* Get menu data of next date */
+async function getData(department) {
   try {
-    const response = await request.get(process.env.INTRANET_FOOD_URL, {
+    const response = await request.get(CONSTANT.INTRANET_ORDER, {
       headers: {
-        Cookie: `${process.env.COOKIE_INTRANET_NAME}=${process.env.COOKIE_INTRANET_VALUE};`,
+        Cookie: `${process.env[`${department}_INTRANET_COOKIE_NAME`]}=${
+          process.env[`${department}_INTRANET_COOKIE_VALUE`]
+        };`,
       },
     });
     return {
       statusCode: response.status,
-      data: parseData(response.data),
+      data: crawlOrderPage(response.data),
     };
   } catch (err) {
     return {
@@ -41,19 +50,22 @@ async function getData() {
   }
 }
 
-async function setFood(body) {
+/* Order food for a user on a date */
+async function setFood(data, department) {
   try {
     const formData = new FormData();
-    for (let key in body) {
-      formData.append(key, body[key]);
+    for (let field in data) {
+      formData.append(field, data[field]);
     }
     const response = await request.post(
-      process.env.INTRANET_SET_FOOD_URL,
+      CONSTANT.INTRANET_ORDER,
       formData.getBuffer(),
       {
         headers: {
           ...formData.getHeaders(),
-          Cookie: `${process.env.COOKIE_INTRANET_NAME}=${process.env.COOKIE_INTRANET_VALUE};`,
+          Cookie: `${process.env[`${department}_INTRANET_COOKIE_NAME`]}=${
+            process.env[`${department}_INTRANET_COOKIE_VALUE`]
+          };`,
         },
       }
     );
@@ -69,25 +81,28 @@ async function setFood(body) {
   }
 }
 
-async function getList(body) {
+/* Get list of ordered food on a date */
+async function getList(data, department) {
   try {
     const formData = new FormData();
-    for (let key in body) {
-      formData.append(key, body[key]);
+    for (let field in data) {
+      formData.append(field, data[field]);
     }
     const response = await request.post(
-      process.env.INTRANET_LIST_URL,
+      CONSTANT.INTRANET_LIST,
       formData.getBuffer(),
       {
         headers: {
           ...formData.getHeaders(),
-          Cookie: `${process.env.COOKIE_INTRANET_NAME}=${process.env.COOKIE_INTRANET_VALUE};`,
+          Cookie: `${process.env[`${department}_INTRANET_COOKIE_NAME`]}=${
+            process.env[`${department}_INTRANET_COOKIE_VALUE`]
+          };`,
         },
       }
     );
     return {
       statusCode: response.status,
-      data: parseTableList(response.data),
+      data: crawlListPage(response.data),
     };
   } catch (err) {
     return {
@@ -97,10 +112,9 @@ async function getList(body) {
   }
 }
 
-async function getListAll() {
-  return await getList({
-    date: "",
-  });
+/* Get list of ordered food on all dates */
+async function getListAll(department) {
+  return await getList({ date: "", department });
 }
 
 module.exports = {
