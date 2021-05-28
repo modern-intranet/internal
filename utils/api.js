@@ -10,6 +10,7 @@ const request = axios.create({
   httpsAgent: new https.Agent({
     rejectUnauthorized: false,
   }),
+  timeout: 5000,
 });
 
 /* Check if cookie is still valid */
