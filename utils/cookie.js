@@ -16,7 +16,7 @@ async function getCookie(department) {
     return true;
   }
 
-  console.log(`Getting cookie of ${department}...`);
+  console.info(`[Cookie] Getting of ${department}...`);
 
   try {
     const browser = await puppeteer.launch();
@@ -70,16 +70,16 @@ async function getCookie(department) {
 
     /* Log result */
     if (intranetCookie) {
-      console.log(`New cookie of ${department} ✓`);
-      console.log(`- ${intranetCookie.value}`);
+      console.info(`[Cookie] New of ${department}`);
+      console.info(`[Cookie] ${intranetCookie.value}`);
     } else {
-      console.log("Get cookie failed ⚠");
+      console.error("[Cookie] Get cookie failed");
     }
 
     currentProcess[department] = false;
     return !!intranetCookie;
   } catch (err) {
-    console.log(`Login failed ${err.message} ⚠`);
+    console.error(`[Cookie] Login failed ${err.message}`);
 
     currentProcess[department] = false;
     return false;
@@ -107,9 +107,9 @@ async function getAllCookies() {
     /* Write back to file */
     await fs.writeFile(__dirname + "/../.env", envfile.stringify(envObj));
 
-    console.log(`Update env succeed ✓`);
+    console.info(`[Cookie] Update env succeed`);
   } catch (err) {
-    console.log(`Update env failed ${err.message} ⚠`);
+    console.error(`[Cookie] Update env failed ${err.message}`);
   }
 }
 

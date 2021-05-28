@@ -11,12 +11,12 @@ setupSocket(io);
 
 /* Get new cookies every 30 minutes */
 cron.schedule("*/30 * * * *", async () => {
-  console.log("[Cron] Getting new cookies...");
+  console.info("[Cron] Getting new cookies");
   await cookie.getAllCookies();
 });
 
 /* Reconnect socket every 30 minutes */
 cron.schedule("*/30 * * * *", () => {
-  console.log("[Cron] Reconnecting socket...");
+  console.info("[Cron] Reconnecting socket");
   setupSocket(io);
 });

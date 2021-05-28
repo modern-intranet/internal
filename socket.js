@@ -7,16 +7,16 @@ const defaultDepartment = DEPARTMENTS[0];
 
 function log(action, data) {
   if (data.statusCode === 200) {
-    console.log(`${action} succeed ✓`);
+    console.info(`[Socket] ${action} succeed`);
   } else {
-    console.log(`${action} failed ⚠`);
-    console.log(`- ${data.data}`);
+    console.error(`[Socket] ${action} failed`);
+    console.error(`[Socket] ${data.data}`);
   }
 }
 
 /* Connect to external server */
 function setupSocket(io) {
-  console.log("Inititalize socket.io");
+  console.info("[Socket] Inititalizing");
 
   if (prevSocket) {
     prevSocket.emit("forceDisconnect");
@@ -30,11 +30,11 @@ function setupSocket(io) {
 
   socket.on("connect", () => {
     socket.emit(SOCKET_ACTION.I_AM_INTRANET);
-    console.log("Socket connected ✓");
+    console.info("[Socket] Connected");
   });
 
   socket.on("disconnect", () => {
-    console.log("Socket disconnected ✓");
+    console.info("[Socket] Disconnected");
   });
 
   /* Validate cookie action */
@@ -46,8 +46,8 @@ function setupSocket(io) {
         statusCode: isSucceed ? 200 : -1,
         data: isSucceed,
       });
-    console.log(
-      `Validate cookie of ${department} ${isSucceed ? "succeed ✓" : "failed ⚠"}`
+    console.info(
+      `Validate cookie of ${department} ${isSucceed ? "succeed" : "failed"}`
     );
   });
 
