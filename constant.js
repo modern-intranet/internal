@@ -29,7 +29,7 @@ const SOCKET_ACTION = {
   GET_LIST: "getList",
   GET_LIST_ALL: "getListAll",
 };
-const SOCKET_ADDRESS = 1 ? "http://localhost:8080" : "https://www.datcom.site";
+const SOCKET_ADDRESS = 0 ? "http://localhost:8080" : "https://www.datcom.site";
 
 module.exports = {
   INTRANET,

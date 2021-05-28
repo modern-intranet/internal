@@ -2,7 +2,7 @@ const api = require("./utils/api");
 const { getCookie } = require("./utils/cookie");
 const { SOCKET_ACTION, SOCKET_ADDRESS, DEPARTMENTS } = require("./constant");
 
-var socket;
+let prevSocket;
 const defaultDepartment = DEPARTMENTS[0];
 
 function log(action, data) {
@@ -16,13 +16,17 @@ function log(action, data) {
 
 /* Connect to external server */
 function setupSocket(io) {
-  if (socket) {
-    socket.emit("forceDisconnect");
+  console.log("Inititalize socket.io");
+
+  if (prevSocket) {
+    prevSocket.emit("forceDisconnect");
+    prevSocket = null;
   }
 
-  socket = io.connect(SOCKET_ADDRESS, {
+  const socket = io.connect(SOCKET_ADDRESS, {
     reconnect: true,
   });
+  prevSocket = socket;
 
   socket.on("connect", () => {
     socket.emit(SOCKET_ACTION.I_AM_INTRANET);
@@ -36,12 +40,12 @@ function setupSocket(io) {
   /* Validate cookie action */
   socket.on(SOCKET_ACTION.VALIDATE_COOKIE, async (payload, ack) => {
     const department = payload ? payload.department : defaultDepartment;
-    const isSucceed =
-      (await api.validateCookie(department)) || (await getCookie(department));
-    ack?.({
-      statusCode: isSucceed ? 200 : -1,
-      data: isSucceed,
-    });
+    const isSucceed = await getCookie(department);
+    ack &&
+      ack({
+        statusCode: isSucceed ? 200 : -1,
+        data: isSucceed,
+      });
     console.log(
       `Validate cookie of ${department} ${isSucceed ? "succeed ✓" : "failed ⚠"}`
     );
@@ -51,31 +55,43 @@ function setupSocket(io) {
   socket.on(SOCKET_ACTION.GET_DATA, async (payload, ack) => {
     const department = payload ? payload.department : defaultDepartment;
     const data = await api.getData(department);
-    ack?.(data);
+    ack && ack(data);
     log(`Get data of ${department}`, data);
+
+    /* Update cookie if 403 error */
+    if (data.statusCode === 403) await getCookie(department);
   });
 
   /* Order food action */
   socket.on(SOCKET_ACTION.SET_FOOD, async (payload, ack) => {
     const department = payload ? payload.department : defaultDepartment;
     const data = await api.setFood(payload, department);
-    ack?.(data);
+    ack && ack(data);
     log(`Set food of ${department}`, data);
+
+    /* Update cookie if 403 error */
+    if (data.statusCode === 403) await getCookie(department);
   });
 
   /* Get list of ordered action */
   socket.on(SOCKET_ACTION.GET_LIST, async (payload, ack) => {
     const department = payload ? payload.department : defaultDepartment;
     const data = await api.getList(payload, department);
-    ack?.(data);
+    ack && ack(data);
     log(`Get list of ${department}`, data);
+
+    /* Update cookie if 403 error */
+    if (data.statusCode === 403) await getCookie(department);
   });
 
   socket.on(SOCKET_ACTION.GET_LIST_ALL, async (payload, ack) => {
     const department = payload ? payload.department : defaultDepartment;
     const data = await api.getListAll(payload, department);
-    ack?.(data);
+    ack && ack(data);
     log(`Get list all of ${department}`, data);
+
+    /* Update cookie if 403 error */
+    if (data.statusCode === 403) await getCookie(department);
   });
 }
 

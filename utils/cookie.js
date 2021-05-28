@@ -2,9 +2,20 @@ const puppeteer = require("puppeteer");
 const envfile = require("envfile");
 const { promises: fs } = require("fs");
 const CONSTANT = require("../constant");
+const api = require("./api");
+
+const currentProcess = {};
 
 /* Stimulate browser to generate cookie */
 async function getCookie(department) {
+  if (!!currentProcess[department]) return false;
+  currentProcess[department] = true;
+
+  if (await api.validateCookie(department)) {
+    currentProcess[department] = false;
+    return true;
+  }
+
   console.log(`Getting cookie of ${department}...`);
 
   try {
@@ -64,9 +75,13 @@ async function getCookie(department) {
     } else {
       console.log("Get cookie failed ⚠");
     }
+
+    currentProcess[department] = false;
     return !!intranetCookie;
   } catch (err) {
     console.log(`Login failed ${err.message} ⚠`);
+
+    currentProcess[department] = false;
     return false;
   }
 }
@@ -81,7 +96,7 @@ async function getAllCookies() {
 
   /* Update to env file */
   try {
-    const file = await fs.readFile(__dirname + "./../.env", "utf8");
+    const file = await fs.readFile(__dirname + "/../.env", "utf8");
     const envObj = envfile.parse(file);
 
     /* Update with current env variables */
@@ -90,7 +105,7 @@ async function getAllCookies() {
     }
 
     /* Write back to file */
-    await fs.writeFile(__dirname + "./../.env", envfile.stringify(envObj));
+    await fs.writeFile(__dirname + "/../.env", envfile.stringify(envObj));
 
     console.log(`Update env succeed ✓`);
   } catch (err) {
