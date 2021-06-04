@@ -39,7 +39,7 @@ function setupSocket(io) {
 
   /* Validate cookie action */
   socket.on(SOCKET_ACTION.VALIDATE_COOKIE, async (payload, ack) => {
-    const department = payload ? payload.department : defaultDepartment;
+    const department = (payload && payload.department) || defaultDepartment;
     const isSucceed = await getCookie(department);
     ack &&
       ack({
@@ -53,7 +53,7 @@ function setupSocket(io) {
 
   /* Get menu data action */
   socket.on(SOCKET_ACTION.GET_DATA, async (payload, ack) => {
-    const department = payload ? payload.department : defaultDepartment;
+    const department = (payload && payload.department) || defaultDepartment;
     const data = await api.getData(department);
     ack && ack(data);
     log(`Get data of ${department}`, data);
@@ -64,7 +64,7 @@ function setupSocket(io) {
 
   /* Order food action */
   socket.on(SOCKET_ACTION.SET_FOOD, async (payload, ack) => {
-    const department = payload ? payload.department : defaultDepartment;
+    const department = (payload && payload.department) || defaultDepartment;
     const data = await api.setFood(payload, department);
     ack && ack(data);
     log(`Set food of ${department}`, data);
@@ -75,7 +75,7 @@ function setupSocket(io) {
 
   /* Get list of ordered action */
   socket.on(SOCKET_ACTION.GET_LIST, async (payload, ack) => {
-    const department = payload ? payload.department : defaultDepartment;
+    const department = (payload && payload.department) || defaultDepartment;
     const data = await api.getList(payload, department);
     ack && ack(data);
     log(`Get list of ${department}`, data);
@@ -85,10 +85,21 @@ function setupSocket(io) {
   });
 
   socket.on(SOCKET_ACTION.GET_LIST_ALL, async (payload, ack) => {
-    const department = payload ? payload.department : defaultDepartment;
+    const department = (payload && payload.department) || defaultDepartment;
     const data = await api.getListAll(payload, department);
     ack && ack(data);
     log(`Get list all of ${department}`, data);
+
+    /* Update cookie if 403 error */
+    if (data.statusCode === 403) await getCookie(department);
+  });
+
+  /* Get user info from intranet action */
+  socket.on(SOCKET_ACTION.GET_USER_INFO, async (payload, ack) => {
+    const department = (payload && payload.department) || defaultDepartment;
+    const data = await api.getUserInfo(payload, department);
+    ack && ack(data);
+    log(`Get user info of ${department}`, data);
 
     /* Update cookie if 403 error */
     if (data.statusCode === 403) await getCookie(department);

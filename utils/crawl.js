@@ -1,4 +1,5 @@
 const cheerio = require("cheerio");
+const CONSTANT = require("../constant");
 
 function crawlOrderPage(data) {
   /* Stimulate html document */
@@ -73,7 +74,58 @@ function crawlListPage(data) {
   return { table, list: convertTableHtmlToList($) };
 }
 
+function crawlUserInfoPage(data, targetEmail) {
+  /* Stimulate html document */
+  const $ = cheerio.load(data);
+
+  /* Get raw table content */
+  const table = $("#cbUserTable").html();
+
+  /* Convert to json data */
+  const convertTableHtmlToListUser = ($) => {
+    const list = [];
+
+    /* Get all rows of table */
+    const listTr = $("#cbUserTable tr");
+
+    /* Parse data from those rows */
+    listTr.each(function (_, tr) {
+      const listTd = $(this).find("td");
+      const record = {};
+
+      listTd.each(function (i) {
+        if (i === 3) {
+          const userInfoLink = $(this).find("a");
+          if (userInfoLink) {
+            record.name = $(this).text().trim();
+            record.id = +userInfoLink.attr("href").split("/").reverse()[0];
+          }
+        }
+        if (i === 4) {
+          const department = CONSTANT.DEPARTMENTS.find(
+            (dept) =>
+              dept.localeCompare($(this).text().replace(/\s+/g, ""), "en", {
+                sensitivity: "base",
+              }) === 0
+          );
+          if (department) record.department = department;
+        }
+        if (i === 6) record.email = $(this).text().trim();
+      });
+
+      if (Object.keys(record).length === 4) list.push(record);
+    });
+
+    return list;
+  };
+
+  return convertTableHtmlToListUser($).find(
+    (user) => user.email === targetEmail
+  );
+}
+
 module.exports = {
   crawlOrderPage,
   crawlListPage,
+  crawlUserInfoPage,
 };

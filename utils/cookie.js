@@ -11,7 +11,15 @@ async function getCookie(department) {
   if (!!currentProcess[department]) return false;
   currentProcess[department] = true;
 
+  /* Validate cookie before get new one */
   if (await api.validateCookie(department)) {
+    currentProcess[department] = false;
+    return true;
+  }
+
+  /* Invalid department */
+  if (CONSTANT.DEPARTMENTS.indexOf(department) === -1) {
+    console.error(`[Cookie] Invalid department ${department}`);
     currentProcess[department] = false;
     return true;
   }

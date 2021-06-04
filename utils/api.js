@@ -3,7 +3,7 @@ const https = require("https");
 const FormData = require("form-data");
 
 const CONSTANT = require("../constant");
-const { crawlOrderPage, crawlListPage } = require("./crawl");
+const { crawlOrderPage, crawlListPage, crawlUserInfoPage } = require("./crawl");
 
 /* Ignore security for testing */
 const request = axios.create({
@@ -118,10 +118,36 @@ async function getListAll(department) {
   return await getList({ date: "", department });
 }
 
+/* Get user info by email */
+async function getUserInfo(data, department) {
+  try {
+    const response = await request.get(
+      `${CONSTANT.INTRANET_USER_INFO}?email=${data.email}`,
+      {
+        headers: {
+          Cookie: `${process.env[`${department}_INTRANET_COOKIE_NAME`]}=${
+            process.env[`${department}_INTRANET_COOKIE_VALUE`]
+          };`,
+        },
+      }
+    );
+    return {
+      statusCode: response.status,
+      data: crawlUserInfoPage(response.data, data.email),
+    };
+  } catch (err) {
+    return {
+      statusCode: err.response ? err.response.status : -1,
+      data: err.message,
+    };
+  }
+}
+
 module.exports = {
   validateCookie,
   getData,
   setFood,
   getList,
   getListAll,
+  getUserInfo,
 };
